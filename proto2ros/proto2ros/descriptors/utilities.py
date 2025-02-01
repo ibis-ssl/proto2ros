@@ -18,6 +18,7 @@ of the constructs that are defined in the corresponding portion. See
 message description for further reference.
 """
 
+import sys
 import itertools
 from collections.abc import Sequence
 from typing import Any, Dict, Iterable, Optional, Tuple
@@ -65,6 +66,7 @@ def locate_repeated(member: str, proto: Any) -> Iterable[Tuple[Sequence[int], An
     Returns:
         an iterable over tuples of local path and member field value.
     """
+    print(f"locate_repeated:  member: {member}, proto: {proto.name}", file=sys.stderr)
     if member not in proto.DESCRIPTOR.fields_by_name:
         raise ValueError(f"{member} is not a member of the given protobuf")
     member_field_descriptor = proto.DESCRIPTOR.fields_by_name[member]

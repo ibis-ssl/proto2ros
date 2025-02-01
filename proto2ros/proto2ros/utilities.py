@@ -6,6 +6,7 @@ import collections
 import functools
 import itertools
 import keyword
+import re
 from typing import Any, Callable, Iterable, Optional, Tuple, Union
 
 from rosidl_adapter.parser import BaseType, Type
@@ -173,3 +174,9 @@ def to_ros_field_name(name: str) -> str:
     if name in RESERVED_KEYWORD_SET:
         name = name + "_field"
     return name
+
+
+def camel_to_snake(name: str) -> str:
+    """Convert camel case string to snake case string."""
+    s1 = re.sub('(.)([A-Z][a-z]+)', r'\1_\2', name)
+    return re.sub('([a-z0-9])([A-Z])', r'\1_\2', s1).lower()

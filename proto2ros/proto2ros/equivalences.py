@@ -13,6 +13,7 @@ respectively for further reference.
 import dataclasses
 import functools
 import math
+import sys
 from collections.abc import Sequence
 from typing import Any, Iterable, List, Optional, Set, Union
 
@@ -29,7 +30,7 @@ from rosidl_adapter.parser import Constant, Field, MessageSpecification, Type
 from proto2ros.configuration import Configuration
 from proto2ros.descriptors.types import COMPOSITE_TYPES, PRIMITIVE_TYPE_NAMES
 from proto2ros.descriptors.utilities import locate_repeated, protofqn, resolve, walk
-from proto2ros.utilities import to_ros_base_type, to_ros_field_name
+from proto2ros.utilities import to_ros_base_type, to_ros_field_name, camel_to_snake
 
 
 @dataclasses.dataclass
@@ -336,6 +337,7 @@ def compute_equivalence_for_message(
         ValueError: when there are too many fields (more than 64) and
         their availability cannot be encoded in the equivalent ROS message.
     """
+    print(f"descriptor: {str(descriptor)}", file=sys.stderr)
     ros_package_name = config.package_mapping[source.package]
     name = equivalent_ros_name(source, location)
     auxiliary_message_specs: List[MessageSpecification] = []
@@ -343,6 +345,8 @@ def compute_equivalence_for_message(
     fields: List[Field] = []
     constants: List[Constant] = []
     oneof_field_sets: List[List[Field]] = [list() for _ in descriptor.oneof_decl]
+    print(f"descriptor.oneof_decl: {str(descriptor.oneof_decl)}", file=sys.stderr)
+    print("oneof_field_sets:" + str(oneof_field_sets), file=sys.stderr)
 
     if not descriptor.options.map_entry:
         if len(descriptor.field) > 0:
@@ -374,19 +378,24 @@ def compute_equivalence_for_message(
             locate_repeated("oneof_decl", descriptor),
             oneof_field_sets,
         ):
+            print("oneof_decl.name: " + oneof_decl.name, file=sys.stderr)
             oneof_name = inflection.underscore(oneof_decl.name)
-            oneof_type_name = inflection.camelize(f"{name}_one_of_{oneof_name}")
+            print("oneof_name: "  + oneof_name, file=sys.stderr)
+            oneof_type_name = inflection.camelize(f"{name}_one_of_{oneof_name.removeprefix('optional_')}")
+            oneof_type_name = "".join([s for s in oneof_type_name.split('_')]) # ROS message nameの命名規則に合わせる
+            print("oneof_type_name: " + oneof_type_name, file=sys.stderr)
             oneof_type = Type(f"{ros_package_name}/{oneof_type_name}")
+            print("oneof_type: " + str(oneof_type), file=sys.stderr)
 
             oneof_constants: List[Constant] = []
-            oneof_constants.append(Constant("int8", f"{oneof_name}_not_set".upper(), 0))
+            oneof_constants.append(Constant("int8", f"{oneof_name.lstrip('_')}_not_set".upper(), 0))
             for i, field in enumerate(oneof_fields, start=1):
-                tag_name = f"{oneof_name}_{field.name}_set".upper()
+                tag_name = f"{oneof_name.lstrip('_')}_{field.name}_set".upper()
                 oneof_constants.append(Constant("int8", tag_name, i))
-            choice_field = Field(Type("int8"), f"{oneof_name}_choice")
+            choice_field = Field(Type("int8"), f"{oneof_name.lstrip('_')}_choice")
             choice_field.annotations["deprecated"] = True
             oneof_fields.append(choice_field)
-            which_field = Field(Type("int8"), "which")
+            which_field = Field(Type("int8"), f"{oneof_name.lstrip('_')}_which") # ROS field nameの命名規則に合わせる
             which_field.annotations["alias"] = choice_field.name
             oneof_fields.append(which_field)
 
@@ -402,7 +411,10 @@ def compute_equivalence_for_message(
             oneof_message_spec.annotations["tag"] = which_field
             auxiliary_message_specs.append(oneof_message_spec)
 
-            field = Field(oneof_type, oneof_name)
+            field_name = oneof_name
+            if field_name.startswith('_'):
+                field_name = 'field' + field_name
+            field = Field(oneof_type, field_name)
             # oneof wrapper field cannot itself be optional
             field.annotations["optional"] = False
             field.annotations["proto-cpp-name"] = oneof_decl.name
