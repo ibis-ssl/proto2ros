@@ -337,7 +337,6 @@ def compute_equivalence_for_message(
         ValueError: when there are too many fields (more than 64) and
         their availability cannot be encoded in the equivalent ROS message.
     """
-    print(f"descriptor: {str(descriptor)}", file=sys.stderr)
     ros_package_name = config.package_mapping[source.package]
     name = equivalent_ros_name(source, location)
     auxiliary_message_specs: List[MessageSpecification] = []
@@ -345,8 +344,6 @@ def compute_equivalence_for_message(
     fields: List[Field] = []
     constants: List[Constant] = []
     oneof_field_sets: List[List[Field]] = [list() for _ in descriptor.oneof_decl]
-    print(f"descriptor.oneof_decl: {str(descriptor.oneof_decl)}", file=sys.stderr)
-    print("oneof_field_sets:" + str(oneof_field_sets), file=sys.stderr)
 
     if not descriptor.options.map_entry:
         if len(descriptor.field) > 0:
@@ -378,14 +375,10 @@ def compute_equivalence_for_message(
             locate_repeated("oneof_decl", descriptor),
             oneof_field_sets,
         ):
-            print("oneof_decl.name: " + oneof_decl.name, file=sys.stderr)
             oneof_name = inflection.underscore(oneof_decl.name)
-            print("oneof_name: "  + oneof_name, file=sys.stderr)
             oneof_type_name = inflection.camelize(f"{name}_one_of_{oneof_name.removeprefix('optional_')}")
             oneof_type_name = "".join([s for s in oneof_type_name.split('_')]) # ROS message nameの命名規則に合わせる
-            print("oneof_type_name: " + oneof_type_name, file=sys.stderr)
             oneof_type = Type(f"{ros_package_name}/{oneof_type_name}")
-            print("oneof_type: " + str(oneof_type), file=sys.stderr)
 
             oneof_constants: List[Constant] = []
             oneof_constants.append(Constant("int8", f"{oneof_name.lstrip('_')}_not_set".upper(), 0))

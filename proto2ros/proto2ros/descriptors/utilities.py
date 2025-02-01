@@ -66,7 +66,6 @@ def locate_repeated(member: str, proto: Any) -> Iterable[Tuple[Sequence[int], An
     Returns:
         an iterable over tuples of local path and member field value.
     """
-    print(f"locate_repeated:  member: {member}, proto: {proto.name}", file=sys.stderr)
     if member not in proto.DESCRIPTOR.fields_by_name:
         raise ValueError(f"{member} is not a member of the given protobuf")
     member_field_descriptor = proto.DESCRIPTOR.fields_by_name[member]
