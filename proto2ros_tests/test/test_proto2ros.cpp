@@ -140,7 +140,7 @@ TEST(Proto2RosTesting, OneOfMessages) {
   Convert(proto_any_command, &ros_any_command);
   constexpr auto expected_choice =
       proto2ros_tests::msg::AnyCommandOneOfCommands::COMMANDS_WALK_SET;
-  EXPECT_EQ(ros_any_command.commands.which, expected_choice);
+  EXPECT_EQ(ros_any_command.commands.commands_which, expected_choice);
   EXPECT_EQ(ros_any_command.commands.commands_choice, expected_choice);
   EXPECT_EQ(ros_any_command.commands.walk.distance,
             proto_any_command.walk().distance());
@@ -165,7 +165,7 @@ TEST(Proto2RosTesting, OneOfEmptyMessages) {
 
   constexpr auto expected_choice =
       proto2ros_tests::msg::AnyCommandOneOfCommands::COMMANDS_SIT_SET;
-  EXPECT_EQ(ros_any_command.commands.which, expected_choice);
+  EXPECT_EQ(ros_any_command.commands.commands_which, expected_choice);
   EXPECT_EQ(ros_any_command.commands.commands_choice, expected_choice);
 
   auto other_proto_any_command = proto2ros_tests::AnyCommand();
