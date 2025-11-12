@@ -288,15 +288,18 @@ def translate_field(
         else:
             type_name = f".{any_expansion}"
             field.annotations["type-casted"] = True
-    if source.syntax == "proto3":
+    # Treat empty syntax as proto2 (default for protobuf v2)
+    syntax = source.syntax if source.syntax else "proto2"
+
+    if syntax == "proto3":
         field.annotations["optional"] = descriptor.proto3_optional or (
             descriptor.label != FieldDescriptorProto.LABEL_REPEATED
             and descriptor.type == FieldDescriptorProto.TYPE_MESSAGE
         )
-    elif source.syntax == "proto2":
+    elif syntax == "proto2":
         field.annotations["optional"] = descriptor.label != FieldDescriptorProto.LABEL_REPEATED
     else:
-        raise ValueError(f"unknown proto syntax: {source.syntax}")
+        raise ValueError(f"unknown proto syntax: {syntax}")
     field.annotations["proto-cpp-name"] = descriptor.name.lower()
     field.annotations["proto-py-name"] = descriptor.name
     ros_type_name = to_ros_base_type(field_type)
